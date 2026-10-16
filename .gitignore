@@ -1,0 +1,24 @@
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets / local configuration
+.env
+.env.*
+
+# Generated reports (kept in a dedicated directory)
+generated_reports/*
+!generated_reports/.gitkeep
+
+# IDE / OS files
+.idea/
+.vscode/
+.DS_Store
