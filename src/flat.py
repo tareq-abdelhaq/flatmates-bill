@@ -17,18 +17,7 @@ class Bill:
     Class that represents a bill and contains data about a bill, such as amount, period and others.
     """
 
-    def __init__(self, amount, period):
+    def __init__(self, amount, period, currency="E£"):
         self.amount = amount
+        self.currency = currency
         self.period = period
-
-
-class PDFReport:
-    """
-    Class responsible to generate PDF reports and it contains data about a PDF reports, such as name.
-    """
-
-    def __init__(self, name):
-        self.name = name
-
-    def generate(self, flatmate1, flatmate2, bill):
-        pass
