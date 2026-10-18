@@ -1,6 +1,6 @@
 # Flatmates Bill
 
-An app that takes the amount of a bill for a period and the number of days each flatmate stayed in the house during that period. It calculates how much each flatmate has to pay and generates a PDF report with the flatmates' names, the period, and the amount each one owes.
+A command-line app that splits a shared bill between two flatmates in proportion to the number of days each one stayed in the house during the bill period. It asks for the bill amount, the period and each flatmate's name and days stayed, prints what each one owes, then generates a PDF report and opens it in your default web browser.
 
 ## Requirements
 
@@ -24,26 +24,40 @@ pip install -r requirements.txt
 
 ## Usage
 
+Run the app from the project root, because the logo is loaded from the relative path `./assets/house.png`:
+
 ```bash
-python main.py
+python src/main.py
 ```
+
+You will be prompted for:
+
+1. The bill amount
+2. The bill period (e.g. `December 2020`)
+3. The name of the first flatmate and the days they stayed in the house
+4. The name of the other flatmate and the days they stayed in the house
+
+Each flatmate's share is `days_in_house / (total days of both) * bill amount`. The report is saved to `generated_reports/bill_<period>.pdf` and opened in your default browser.
 
 ## Design
 
-| Class | Attributes / Methods |
-|---|---|
-| `Bill` | `amount`, `period` |
-| `Flatmate` | `name`, `days_in_house`, `pays(bill)` |
-| `PdfReport` | `filename`, `generate(flatmate1, flatmate2, bill)` |
+| Class | Module | Attributes / Methods |
+|---|---|---|
+| `Bill` | [`src/flat.py`](src/flat.py) | `amount`, `period`, `currency` (default `E£`) |
+| `Flatmate` | [`src/flat.py`](src/flat.py) | `name`, `days_in_house`, `pays(bill, co_flatmate)` |
+| `PDFReport` | [`src/reports.py`](src/reports.py) | `name`, `generate(flatmate1, flatmate2, bill)` |
 
 ## Project structure
 
 ```
 flatmates-bill/
-├── assets/            # images used in the PDF report
-├── generated_reports/ # generated PDF reports (contents are git-ignored)
-├── main.py            # entry point
-├── requirements.txt   # pinned dependencies
-├── .python-version    # Python version used for development
+├── assets/              # images used in the PDF report
+├── generated_reports/   # generated PDF reports (contents are git-ignored)
+├── src/
+│   ├── main.py          # entry point (prompts for input and runs the app)
+│   ├── flat.py          # Bill and Flatmate classes
+│   └── reports.py       # PDFReport class
+├── requirements.txt     # pinned dependencies
+├── .python-version      # Python version used for development
 └── .gitignore
 ```
