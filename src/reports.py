@@ -1,8 +1,9 @@
-import webbrowser
 from pathlib import Path
 
+from filestack import Client
 from fpdf import FPDF
 
+from config import require_env
 from flat import Bill, Flatmate
 
 
@@ -14,9 +15,11 @@ class PDFReport:
     def __init__(self, name):
         self.name = name
 
-    def generate(self, flatmate1: Flatmate, flatmate2: Flatmate, bill: Bill):
-        pdf_path = Path(__file__).parent.parent / "generated_reports" / f"{self.name}"
+    @property
+    def filepath(self) -> Path:
+        return Path(__file__).parent.parent / "generated_reports" / self.name
 
+    def generate(self, flatmate1: Flatmate, flatmate2: Flatmate, bill: Bill):
         flatmate1_pay = (
             str(round(flatmate1.pays(bill, co_flatmate=flatmate2), 2))
             + " "
@@ -72,6 +75,23 @@ class PDFReport:
             ln=1,
         )
 
-        # Save and open the PDF file via browser
-        pdf.output(str(pdf_path))
-        webbrowser.open(pdf_path.as_uri())
+        # Save the PDF
+        pdf.output(str(self.filepath))
+
+
+class FileSharer:
+    """
+    An Object that's responsible to share files through filestack-python and give back a URL to access the uploaded file.
+    """
+
+    def __init__(self, filepath: Path):
+        self.filepath = filepath
+
+    def share(self):
+        client = Client(require_env("FILESTACK_API_KEY"))
+
+        if not self.filepath.exists() or not self.filepath.is_file():
+            raise ValueError(f"Filepath is not valid: {self.filepath}")
+
+        new_filelink = client.upload(filepath=self.filepath)
+        return new_filelink.url

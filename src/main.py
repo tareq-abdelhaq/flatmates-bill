@@ -1,5 +1,5 @@
 from flat import Bill, Flatmate
-from reports import PDFReport
+from reports import FileSharer, PDFReport
 
 amount = float(input("Hey, enter the bill amount: "))
 period = input("Enter the bill period? E.g. December 2020: ")
@@ -28,3 +28,9 @@ print(f"{flatmate2.name.capitalize()} pays: {flatmate2.pays(bill, flatmate1)!s}"
 
 pdf_report = PDFReport(name=f"bill_{bill.period}.pdf")
 pdf_report.generate(flatmate1, flatmate2, bill)
+
+file_sharer = FileSharer(pdf_report.filepath)
+print(file_sharer.share())
+
+# The upload succeeded, so the local copy is no longer needed
+pdf_report.filepath.unlink()
