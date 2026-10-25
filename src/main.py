@@ -1,36 +1,102 @@
+from uuid import uuid4
+
+from flask import Flask, flash, redirect, render_template, session, url_for
+from flask.views import MethodView
+from flask_wtf import FlaskForm
+from werkzeug.utils import secure_filename
+from wtforms import FloatField, IntegerField, StringField, SubmitField
+from wtforms.validators import DataRequired, InputRequired, NumberRange
+
+from config import require_env
 from flat import Bill, Flatmate
 from reports import FileSharer, PDFReport
 
-amount = float(input("Hey, enter the bill amount: "))
-period = input("Enter the bill period? E.g. December 2020: ")
+app = Flask(__name__)
+app.config["SECRET_KEY"] = require_env("SECRET_KEY")
 
-flatmate1_name = input("What's your name? ")
-flatmate1_days_in_house = int(
-    input(
-        f"How many days did {flatmate1_name} stayed in the house during the bill period: "
+
+class HomePage(MethodView):
+    def get(self):
+        return render_template("index.html")
+
+
+class BillForm(FlaskForm):
+    amount = FloatField(
+        "Bill Amount:", validators=[InputRequired(), NumberRange(min=0.01)]
     )
-)
+    period = StringField("Bill Period:", validators=[DataRequired()])
 
-flatmate2_name = input("What's the name of the other flatmate? ")
-flatmate2_days_in_house = int(
-    input(
-        f"How many days did {flatmate2_name} stayed in the house during the bill period: "
+    name1 = StringField("Name:", validators=[DataRequired()])
+    days_in_house1 = IntegerField(
+        "Days in house:", validators=[InputRequired(), NumberRange(min=0)]
     )
-)
 
-bill = Bill(amount, period)
+    name2 = StringField("Name:", validators=[DataRequired()])
+    days_in_house2 = IntegerField(
+        "Days in house:", validators=[InputRequired(), NumberRange(min=0)]
+    )
 
-flatmate1 = Flatmate(name=flatmate1_name, days_in_house=flatmate1_days_in_house)
-flatmate2 = Flatmate(name=flatmate2_name, days_in_house=flatmate2_days_in_house)
+    submit = SubmitField("Calculate")
 
-print(f"{flatmate1.name.capitalize()} pays: {flatmate1.pays(bill, flatmate2)!s}")
-print(f"{flatmate2.name.capitalize()} pays: {flatmate2.pays(bill, flatmate1)!s}")
+    def validate(self, extra_validators=None):
+        if not super().validate(extra_validators):
+            return False
 
-pdf_report = PDFReport(name=f"bill_{bill.period}.pdf")
-pdf_report.generate(flatmate1, flatmate2, bill)
+        # Flatmate.pays divides by the combined days, so they can't both be 0
+        if (self.days_in_house1.data or 0) + (self.days_in_house2.data or 0) == 0:
+            self.days_in_house2.errors = [
+                "At least one flatmate must have stayed 1 or more days."
+            ]
+            return False
+        return True
 
-file_sharer = FileSharer(pdf_report.filepath)
-print(file_sharer.share())
 
-# The upload succeeded, so the local copy is no longer needed
-pdf_report.filepath.unlink()
+class BillPage(MethodView):
+    def get(self):
+        return render_template("bill.html", form=BillForm())
+
+    def post(self):
+        form = BillForm()
+        if not form.validate_on_submit():
+            return render_template("bill.html", form=form)
+
+        bill = Bill(amount=form.amount.data, period=form.period.data)
+        flatmate1 = Flatmate(name=form.name1.data, days_in_house=form.days_in_house1.data)
+        flatmate2 = Flatmate(name=form.name2.data, days_in_house=form.days_in_house2.data)
+
+        # The period is user input: sanitize it and add a random suffix so
+        # simultaneous submissions never collide or escape the folder.
+        filename = f"bill_{secure_filename(str(bill.period))}_{uuid4().hex[:8]}.pdf"
+        pdf_report = PDFReport(name=filename)
+        pdf_report.generate(flatmate1, flatmate2, bill)
+
+        try:
+            report_url = FileSharer(pdf_report.filepath).share()
+        except Exception:
+            app.logger.exception("Uploading the report failed")
+            flash("Could not upload the report. Please try again.")
+            return render_template("bill.html", form=form)
+        finally:
+            # Remove the local copy either way: on success it lives on Filestack,
+            # and on failure a retry generates a fresh file with a new name.
+            pdf_report.filepath.unlink(missing_ok=True)
+
+        # The session is signed with SECRET_KEY, so the URL can't be tampered with
+        session["report_url"] = report_url
+        return redirect(url_for("results_page"))
+
+
+class ResultsPage(MethodView):
+    def get(self):
+        report_url = session.get("report_url")
+        if not report_url:
+            return redirect(url_for("bill_page"))
+        return render_template("results.html", report_url=report_url)
+
+
+app.add_url_rule("/", view_func=HomePage.as_view("home_page"))
+app.add_url_rule("/bill", view_func=BillPage.as_view("bill_page"))
+app.add_url_rule("/results", view_func=ResultsPage.as_view("results_page"))
+
+if __name__ == "__main__":
+    app.run(debug=True)

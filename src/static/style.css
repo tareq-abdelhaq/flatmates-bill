@@ -1,0 +1,158 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 2rem 1rem;
+  font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #1f2328;
+  background: #f4f6f8;
+}
+
+.container {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: #ffffff;
+  border: 1px solid #e1e4e8;
+  border-radius: 8px;
+}
+
+h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.75rem;
+}
+
+h2 {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+hr {
+  margin: 1.5rem 0;
+  border: 0;
+  border-top: 1px solid #e1e4e8;
+}
+
+a {
+  color: #2563eb;
+}
+
+/* Form */
+form p {
+  margin: 0 0 1rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+
+input[type="text"],
+input[type="number"] {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  border: 1px solid #c4c9d0;
+  border-radius: 6px;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+  border-color: #2563eb;
+}
+
+.error {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: #b42318;
+}
+
+.flash {
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  color: #b42318;
+  background: #fef3f2;
+  border: 1px solid #fecdca;
+  border-radius: 6px;
+}
+
+/* Buttons (links and the form submit) */
+.button,
+input[type="submit"] {
+  display: inline-block;
+  padding: 0.65rem 1.25rem;
+  font: inherit;
+  font-weight: 600;
+  color: #ffffff;
+  text-decoration: none;
+  background: #2563eb;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.button:hover,
+input[type="submit"]:hover {
+  background: #1d4ed8;
+}
+
+input[type="submit"] {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.links {
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+}
+
+/* Submit in progress */
+input[type="submit"]:disabled {
+  background: #93a9d6;
+  cursor: wait;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1rem 0 0;
+  font-size: 0.9rem;
+  color: #57606a;
+}
+
+.status[hidden] {
+  display: none;
+}
+
+.spinner {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid #c4c9d0;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 3s;
+  }
+}

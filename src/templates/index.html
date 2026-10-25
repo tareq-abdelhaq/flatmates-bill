@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flatmates Bill</title>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Flatmates Bill</h1>
+      <p>
+        Split a shared bill fairly between two flatmates, based on the number of days each one
+        stayed in the house during the bill period. Enter the bill details and get a PDF report you
+        can download and share.
+      </p>
+      <a class="button" href="{{ url_for('bill_page') }}">Calculate your bill</a>
+    </main>
+  </body>
+</html>

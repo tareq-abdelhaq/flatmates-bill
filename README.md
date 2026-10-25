@@ -1,18 +1,27 @@
 # Flatmates Bill
 
-A web app, built with [Flask](https://flask.palletsprojects.com/) and [Flask-WTF](https://flask-wtf.readthedocs.io/), that splits a shared bill between two flatmates in proportion to the number of days each one stayed in the house during the bill period. The user fills in a form with the bill amount, the period and each flatmate's name and days stayed. The app calculates what each flatmate owes, generates a PDF report and gives the user a link to download it.
-
-> **Status:** the web interface is being built. The calculation and PDF/upload logic (`src/flat.py`, `src/reports.py`) is done and reusable. The entry point [`src/main.py`](src/main.py) is still the original command-line version until the Flask app replaces it.
+A web app, built with [Flask](https://flask.palletsprojects.com/) and [Flask-WTF](https://flask-wtf.readthedocs.io/), that splits a shared bill between two flatmates in proportion to the number of days each one stayed in the house during the bill period. The user fills in a form with the bill amount, the period and each flatmate's name and days stayed. The app calculates what each flatmate owes, generates a PDF report, uploads it to [Filestack](https://www.filestack.com/) and gives the user a link to download it.
 
 ## Pages
 
-| Page | Description |
-|---|---|
-| Home | Introduces the app and has a link to the bill form page |
-| Bill form | A form (Flask-WTF, CSRF-protected) with the bill amount, the bill period (e.g. `December 2020`), and each flatmate's name and days stayed, plus a **Calculate** submit button |
-| Results | Shows a link to download the generated PDF report |
+| Page | Route | Description |
+|---|---|---|
+| Home | `/` | Introduces the app and has a link to the bill form page |
+| Bill form | `/bill` | A CSRF-protected form (Flask-WTF) with the bill amount, the bill period (e.g. `December 2020`), and each flatmate's name and days stayed, plus a **Calculate** submit button |
+| Results | `/results` | Shows a link to download the generated PDF report |
 
-Each flatmate's share is `days_in_house / (total days of both) * bill amount`. Reports are saved to `generated_reports/bill_<period>.pdf` and can be uploaded to [Filestack](https://www.filestack.com/) to get a shareable URL.
+Each flatmate's share is `days_in_house / (total days of both) * bill amount`.
+
+### How a submission works
+
+1. The form is validated: every field is required, the amount must be positive, days can't be negative, and the two flatmates can't both have 0 days.
+2. The PDF is generated into `generated_reports/` under a unique name (`bill_<period>_<random>.pdf`), so simultaneous submissions never collide.
+3. The PDF is uploaded to Filestack. The local copy is deleted afterwards, whether the upload succeeded or not.
+4. On success, the Filestack URL is stored in the signed session and the user is redirected to the results page. On failure, the form is shown again with an error message and the entered values are kept.
+
+While the report is being generated, the **Calculate** button is disabled and a progress message is shown ([`src/static/bill.js`](src/static/bill.js)), so the form can't be submitted twice.
+
+The results page reads the URL from the session, so opening `/results` without having submitted a bill redirects to the form. The Filestack link is public: anyone who has it can download the report.
 
 ## Requirements
 
@@ -58,15 +67,13 @@ value = require_env("MY_VARIABLE")  # raises RuntimeError if missing or empty
 
 ## Usage
 
-The web app's run command will be documented here once the Flask app is in place.
-
-Until then, the original command-line version still works and can be run from any directory:
+Start the development server (it can be run from any directory):
 
 ```bash
 python src/main.py
 ```
 
-It prompts for the bill amount, period, and each flatmate's name and days stayed, prints what each one owes, uploads the PDF to Filestack and prints the shareable URL. The local PDF is deleted after a successful upload; if the upload fails, the file is kept.
+Then open <http://127.0.0.1:5000/> in your browser. The server runs with `debug=True`, which is meant for local development only; don't use it to serve the app publicly.
 
 ## Design
 
@@ -76,6 +83,10 @@ It prompts for the bill amount, period, and each flatmate's name and days stayed
 | `Flatmate` | [`src/flat.py`](src/flat.py) | `name`, `days_in_house`, `pays(bill, co_flatmate)` |
 | `PDFReport` | [`src/reports.py`](src/reports.py) | `name`, `filepath` (property), `generate(flatmate1, flatmate2, bill)` |
 | `FileSharer` | [`src/reports.py`](src/reports.py) | `filepath`, `share()` (uploads the file and returns its URL) |
+| `BillForm` | [`src/main.py`](src/main.py) | Flask-WTF form with the validated bill and flatmate fields |
+| `HomePage`, `BillPage`, `ResultsPage` | [`src/main.py`](src/main.py) | Flask `MethodView` classes for the three pages |
+
+A form object is created inside each request handler, never as a class attribute: it reads the current request and CSRF token, so a shared instance would fail at import time and leak one user's data to another.
 
 ## Project structure
 
@@ -84,10 +95,12 @@ flatmates-bill/
 ├── assets/              # images used in the PDF report
 ├── generated_reports/   # generated PDF reports (contents are git-ignored)
 ├── src/
-│   ├── main.py          # entry point (currently the CLI; to be replaced by the Flask app)
+│   ├── main.py          # Flask app: routes, BillForm and entry point
 │   ├── config.py        # loads .env and exposes require_env()
 │   ├── flat.py          # Bill and Flatmate classes
-│   └── reports.py       # PDFReport and FileSharer classes
+│   ├── reports.py       # PDFReport and FileSharer classes
+│   ├── templates/       # Jinja templates: index.html, bill.html, results.html
+│   └── static/          # style.css and bill.js (disables the submit button while working)
 ├── .env.example         # template for required environment variables
 ├── requirements.txt     # pinned dependencies
 ├── .python-version      # Python version used for development

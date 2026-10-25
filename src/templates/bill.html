@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bill</title>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    <main class="container">
+    <h1>Bill Form</h1>
+    <p>Enter the bill details and how many days each flatmate stayed in the house.</p>
+
+    {% for message in get_flashed_messages() %}<p class="flash">{{ message }}</p>{% endfor %}
+
+    <form id="bill-form" method="post" action="{{ url_for('bill_page') }}">
+      {{ form.hidden_tag() }}
+
+      <h2>Bill</h2>
+      <p>
+        {{ form.amount.label }} {{ form.amount() }} {% for error in form.amount.errors %}<span class="error"
+          >{{ error }}</span
+        >{% endfor %}
+      </p>
+      <p>
+        {{ form.period.label }} {{ form.period(placeholder="e.g. December 2020") }} {% for error in
+        form.period.errors %}<span class="error">{{ error }}</span>{% endfor %}
+      </p>
+
+      <hr />
+
+      <h2>First Flatmate</h2>
+      <p>
+        {{ form.name1.label }} {{ form.name1() }} {% for error in form.name1.errors %}<span class="error"
+          >{{ error }}</span
+        >{% endfor %}
+      </p>
+      <p>
+        {{ form.days_in_house1.label }} {{ form.days_in_house1() }} {% for error in
+        form.days_in_house1.errors %}<span class="error">{{ error }}</span>{% endfor %}
+      </p>
+
+      <hr />
+
+      <h2>Second Flatmate</h2>
+      <p>
+        {{ form.name2.label }} {{ form.name2() }} {% for error in form.name2.errors %}<span class="error"
+          >{{ error }}</span
+        >{% endfor %}
+      </p>
+      <p>
+        {{ form.days_in_house2.label }} {{ form.days_in_house2() }} {% for error in
+        form.days_in_house2.errors %}<span class="error">{{ error }}</span>{% endfor %}
+      </p>
+
+      {{ form.submit() }}
+      <p id="form-status" class="status" role="status" hidden>
+        <span class="spinner" aria-hidden="true"></span>
+        Generating your report. This can take a few seconds...
+      </p>
+    </form>
+
+    <p class="links"><a href="{{ url_for('home_page') }}">Back to home</a></p>
+    </main>
+    <script src="{{ url_for('static', filename='bill.js') }}"></script>
+  </body>
+</html>
