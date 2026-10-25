@@ -35,8 +35,9 @@ class PDFReport:
         pdf.add_page()
 
         # Insert flatmate bill document icon as logo
+        logo_path = Path(__file__).parent.parent / "assets" / "house.png"
         pdf.image(
-            "./assets/house.png",
+            str(logo_path),
             w=30,
             h=30,
         )
