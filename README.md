@@ -1,11 +1,23 @@
 # Flatmates Bill
 
-A command-line app that splits a shared bill between two flatmates in proportion to the number of days each one stayed in the house during the bill period. It asks for the bill amount, the period and each flatmate's name and days stayed, prints what each one owes, generates a PDF report, uploads it to [Filestack](https://www.filestack.com/) and prints a shareable URL. The local PDF is deleted after a successful upload.
+A web app, built with [Flask](https://flask.palletsprojects.com/) and [Flask-WTF](https://flask-wtf.readthedocs.io/), that splits a shared bill between two flatmates in proportion to the number of days each one stayed in the house during the bill period. The user fills in a form with the bill amount, the period and each flatmate's name and days stayed. The app calculates what each flatmate owes, generates a PDF report and gives the user a link to download it.
+
+> **Status:** the web interface is being built. The calculation and PDF/upload logic (`src/flat.py`, `src/reports.py`) is done and reusable. The entry point [`src/main.py`](src/main.py) is still the original command-line version until the Flask app replaces it.
+
+## Pages
+
+| Page | Description |
+|---|---|
+| Home | Introduces the app and has a link to the bill form page |
+| Bill form | A form (Flask-WTF, CSRF-protected) with the bill amount, the bill period (e.g. `December 2020`), and each flatmate's name and days stayed, plus a **Calculate** submit button |
+| Results | Shows a link to download the generated PDF report |
+
+Each flatmate's share is `days_in_house / (total days of both) * bill amount`. Reports are saved to `generated_reports/bill_<period>.pdf` and can be uploaded to [Filestack](https://www.filestack.com/) to get a shareable URL.
 
 ## Requirements
 
 - Python 3.12 (see [`.python-version`](.python-version))
-- Dependencies listed in [`requirements.txt`](requirements.txt)
+- Dependencies listed in [`requirements.txt`](requirements.txt) (includes Flask and Flask-WTF)
 - A Filestack API key
 
 ## Setup
@@ -22,9 +34,9 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 # 3. Install the dependencies
 pip install -r requirements.txt
 
-# 4. Configure your API key
+# 4. Configure your environment variables
 cp .env.example .env
-#    then edit .env and set FILESTACK_API_KEY
+#    then edit .env and set FILESTACK_API_KEY and SECRET_KEY
 ```
 
 ### Configuration
@@ -34,6 +46,7 @@ Secrets are read from environment variables, loaded from a `.env` file in the pr
 | Variable | Description |
 |---|---|
 | `FILESTACK_API_KEY` | API key used to upload the PDF report to Filestack |
+| `SECRET_KEY` | Secret used by Flask / Flask-WTF to sign sessions and CSRF tokens. Generate one with `python -c "import secrets; print(secrets.token_hex(32))"` |
 
 To use a new variable in code:
 
@@ -45,20 +58,15 @@ value = require_env("MY_VARIABLE")  # raises RuntimeError if missing or empty
 
 ## Usage
 
-Run the app from the project root, because the logo is loaded from the relative path `./assets/house.png`:
+The web app's run command will be documented here once the Flask app is in place.
+
+Until then, the original command-line version still works and can be run from any directory:
 
 ```bash
 python src/main.py
 ```
 
-You will be prompted for:
-
-1. The bill amount
-2. The bill period (e.g. `December 2020`)
-3. The name of the first flatmate and the days they stayed in the house
-4. The name of the other flatmate and the days they stayed in the house
-
-Each flatmate's share is `days_in_house / (total days of both) * bill amount`. The report is saved to `generated_reports/bill_<period>.pdf`, uploaded to Filestack, and the resulting URL is printed. After a successful upload the local PDF is removed; if the upload fails, the file is kept.
+It prompts for the bill amount, period, and each flatmate's name and days stayed, prints what each one owes, uploads the PDF to Filestack and prints the shareable URL. The local PDF is deleted after a successful upload; if the upload fails, the file is kept.
 
 ## Design
 
@@ -76,7 +84,7 @@ flatmates-bill/
 ├── assets/              # images used in the PDF report
 ├── generated_reports/   # generated PDF reports (contents are git-ignored)
 ├── src/
-│   ├── main.py          # entry point (prompts for input and runs the app)
+│   ├── main.py          # entry point (currently the CLI; to be replaced by the Flask app)
 │   ├── config.py        # loads .env and exposes require_env()
 │   ├── flat.py          # Bill and Flatmate classes
 │   └── reports.py       # PDFReport and FileSharer classes
